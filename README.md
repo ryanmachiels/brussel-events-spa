@@ -1,47 +1,74 @@
 # Brussel Events — Interactieve SPA met Brussel Open Data
 
 > Single-page webapplicatie (vanilla JS) voor het vak **Advanced Web**.
-> Verken culturele evenementen in Brussel: bekijk ze in een lijst en op een
-> kaart, filter/sorteer/zoek, en bewaar favorieten.
+> Verken culturele, toeristische en evenementlocaties in Brussel: bekijk ze in
+> een lijst en op een kaart, filter/zoek/sorteer, en bewaar favorieten met een
+> persoonlijke notitie.
 
-## Projectbeschrijving
+Gebouwd met **Vite** + **vanilla JavaScript (ES modules)** + **vanilla CSS**.
+Geen front-end framework, geen CSS-framework. De kaart gebruikt de **Leaflet**-
+library met OpenStreetMap-tegels.
 
-_TODO: korte beschrijving van de app en de belangrijkste features._
+## Functionaliteiten
 
-### Screenshots
+- **Lijstweergave** met 6 kolommen (naam, categorie, gemeente, adres, postcode, website).
+- **Kaartweergave** (Leaflet + OpenStreetMap): markers per locatie, popup met link naar de details.
+- **Detail-modal** met alle beschikbare velden (contact, links, toegankelijkheid, coördinaten, datums).
+- **Filteren** op categorie en postcode, **zoeken** op naam/adres (gedebounced, 300 ms) en **sorteren** (naam, postcode, publicatiedatum, oplopend/aflopend).
+- **Favorieten** (hartje per item) met aparte "Favorieten"-weergave, bewaard in LocalStorage.
+- **Persoonlijke notitie** bij een favoriet, met formuliervalidatie (verplicht + max. 200 tekens).
+- **Voorkeuren** die bewaard blijven tussen sessies: licht/donker thema, taal (NL/FR) en de laatste filter-state.
+- **Infinite scroll** via de IntersectionObserver API (rijen laden in batches tijdens het scrollen).
+- **API-caching** in LocalStorage met een TTL van 1 uur.
+- **Responsive** (mobile-first): op telefoon klapt de tabel om naar kaartjes.
 
-_TODO: 2-3 screenshots (lijst-view, kaart-view, detail-modal)._
+## Screenshots
+
+> _Voeg hieronder je eigen screenshots toe (bv. in een map `screenshots/`)._
+
+| Lijstweergave | Kaartweergave | Detail + notitie |
+| --- | --- | --- |
+| `![Lijst](screenshots/lijst.png)` | `![Kaart](screenshots/kaart.png)` | `![Detail](screenshots/detail.png)` |
 
 ## Gebruikte API
 
-- **Bron:** Brussel Open Data — https://opendata.brussels.be/
-- **Dataset / endpoint:** _TODO: directe link naar het gebruikte dataset endpoint (te verifiëren in stap 2)._
+- **Portaal:** Brussel Open Data — https://opendata.brussels.be/
+- **Dataset:** _Lieux culturels, touristiques et événementiels recensés par Visit.Brussels_
+  (id: `lieux_culturels_touristiques_evenementiels_visitbrussels_vbx`, ~598 records, drietalig NL/FR/EN).
+- **Endpoint (records, geverifieerd):**
+  ```
+  https://opendata.brussels.be/api/explore/v2.1/catalog/datasets/lieux_culturels_touristiques_evenementiels_visitbrussels_vbx/records?limit=100
+  ```
+- API-documentatie: OpenDataSoft Explore API v2.1 — https://help.opendatasoft.com/apis/ods-explore-v2/
 
 ## Verplichte technieken → bestand:lijnnummer
 
-_Deze tabel wordt ingevuld zodra de features geïmplementeerd zijn (stap 12)._
+| Techniek | Locatie(s) in de code |
+| --- | --- |
+| DOM: selecteren (`querySelector`) | `src/main.js:35`, `src/main.js:76–89` |
+| DOM: manipuleren (`createElement`, `classList`, `textContent`) | `src/js/ui.js:93–101` (alle drie in `buildFavButton`); `src/main.js:108`, `src/main.js:195–197` |
+| DOM: events (`addEventListener`) | `src/main.js:207–209`, `src/main.js:215`; `src/js/ui.js:266` (submit) |
+| Constanten (`const`) | `src/js/api.js:18–28` (en doorheen het hele project) |
+| Template literals | `src/js/api.js:23` (URL); `src/main.js:157` |
+| Iteratie (`forEach`, `for...of`) | `forEach`: `src/js/ui.js:122`, `src/js/ui.js:161` — `for...of`: `src/main.js:114` |
+| Array-methodes (`map`, `filter`, `reduce`, `sort`, `find`, `some`) | `map`: `src/js/ui.js:90` · `filter`: `src/js/filters.js:32` · `reduce`: `src/js/filters.js:7` · `sort`: `src/js/filters.js:55` · `find`: `src/main.js:258` · `some`: `src/js/filters.js:38` |
+| Arrow functions | `src/js/filters.js:6`, `src/js/filters.js:53` (en overal) |
+| Ternary operator | `src/main.js:239–240`; `src/js/filters.js:56` |
+| Callback functions | `src/js/filters.js:61` (`debounce`), gebruikt in `src/main.js:215`; `src/js/observer.js:38` |
+| Promises (`.then` / `.catch`) | `src/main.js:341`, `src/main.js:361` |
+| Async / await | `src/js/api.js:41`, `src/js/api.js:49`, `src/js/api.js:55` |
+| Observer API (`IntersectionObserver`) | `src/js/observer.js:38` |
+| Fetch | `src/js/api.js:49` |
+| JSON parsing en weergeven | `src/js/api.js:55` (`response.json()`); `src/js/storage.js:20`, `src/js/storage.js:36` |
+| Formuliervalidatie | `src/js/validation.js:7` (`validateNote`); `src/js/ui.js:266` (submit-handler) |
+| LocalStorage | `src/js/storage.js:20`, `src/js/storage.js:32`, `src/js/storage.js:39` |
 
-| Techniek | Bestand | Lijnnummer(s) |
-| --- | --- | --- |
-| DOM: selecteren (`querySelector`) | _TODO_ | _TODO_ |
-| DOM: manipuleren (`createElement`, `classList`, `textContent`) | _TODO_ | _TODO_ |
-| DOM: events (`addEventListener`) | _TODO_ | _TODO_ |
-| Constanten (`const`) | _TODO_ | _TODO_ |
-| Template literals | _TODO_ | _TODO_ |
-| Iteratie (`forEach`, `for...of`) | _TODO_ | _TODO_ |
-| Array methodes (`map`, `filter`, `reduce`, `sort`, `find`, `some`) | _TODO_ | _TODO_ |
-| Arrow functions | _TODO_ | _TODO_ |
-| Ternary operator | _TODO_ | _TODO_ |
-| Callback functions | _TODO_ | _TODO_ |
-| Promises (`.then` / `.catch`) | _TODO_ | _TODO_ |
-| Async / await | _TODO_ | _TODO_ |
-| Observer API (`IntersectionObserver`) | _TODO_ | _TODO_ |
-| Fetch | _TODO_ | _TODO_ |
-| JSON parsing en weergeven | _TODO_ | _TODO_ |
-| Formuliervalidatie | _TODO_ | _TODO_ |
-| LocalStorage | _TODO_ | _TODO_ |
+> Lijnnummers verwijzen naar de staat van de code bij het inleveren; kleine
+> afwijkingen kunnen voorkomen als er nadien nog gewijzigd wordt.
 
 ## Installatie
+
+Vereist: **Node.js 18+** (ontwikkeld op Node 24).
 
 ```bash
 npm install
@@ -50,17 +77,48 @@ npm run dev
 
 De dev-server draait standaard op http://localhost:5173.
 
-Voor een productie-build:
+Productie-build maken en bekijken:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Bronnen
+## Projectstructuur
 
-_TODO: gebruikte bronnen, documentatie en snippets._
+```
+/
+├── index.html
+├── package.json
+├── vite.config.js
+├── README.md
+└── src/
+    ├── main.js              # entry point: state, events, view-logica
+    ├── css/
+    │   └── style.css
+    └── js/
+        ├── api.js           # fetch + LocalStorage-caching met TTL
+        ├── ui.js            # lijst-rendering, favoriet-hartje, detail-modal
+        ├── map.js           # Leaflet-kaart met markers
+        ├── filters.js       # filter / zoek / sorteer + debounce
+        ├── storage.js       # LocalStorage-helpers (JSON + TTL)
+        ├── favorites.js     # favorieten + notities
+        ├── preferences.js   # thema + taal + filter-state
+        ├── observer.js      # IntersectionObserver (infinite scroll)
+        └── validation.js    # formuliervalidatie
+```
 
-## AI chatlog
+## Gebruikte bronnen
 
-_TODO: referentie naar de AI chatlog._
+- OpenDataSoft Explore API v2.1 — https://help.opendatasoft.com/apis/ods-explore-v2/
+- Leaflet documentatie — https://leafletjs.com/reference.html
+- OpenStreetMap (kaarttegels) — https://www.openstreetmap.org/
+- MDN Web Docs (Fetch, IntersectionObserver, `<dialog>`, LocalStorage) — https://developer.mozilla.org/
+- Vite documentatie — https://vite.dev/
+- Leaflet + bundler marker-icon fix — https://github.com/Leaflet/Leaflet/issues/4968
+
+## AI-chatlog
+
+Dit project is mee opgebouwd met behulp van **Claude Code (Anthropic)**.
+
+> _Voeg hier een link naar of een export van de volledige AI-chatlog toe._
