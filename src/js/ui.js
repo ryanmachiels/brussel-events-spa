@@ -66,9 +66,10 @@ export const localizePlace = (record, lang = 'nl') => {
     ),
     zip: pick(record.translations_fr_address_zip),
     website: pick(record.translations_fr_website),
-    // Onderstaande velden worden in latere stappen gebruikt (modal, kaart).
+    // Onderstaande velden worden in latere stappen gebruikt (modal, kaart, sort).
     phone: pick(record.translations_fr_phone_contact, record.translations_fr_phone_booking),
     email: pick(record.translations_fr_email),
+    publishedAt: record.published_at ?? null,
     lat: geo ? geo.lat : null,
     lon: geo ? geo.lon : null,
     raw: record,
