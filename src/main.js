@@ -12,6 +12,7 @@ import {
   debounce,
 } from './js/filters.js';
 import { initMap, renderMarkers } from './js/map.js';
+import { toggleFavorite, isFavorite } from './js/favorites.js';
 
 const LANG = 'nl'; // taalswitcher volgt in stap 8
 
@@ -26,6 +27,7 @@ app.innerHTML = `
     <section class="view-switch" role="tablist" aria-label="Weergave">
       <button id="view-list" class="view-btn is-active" type="button">Lijst</button>
       <button id="view-map" class="view-btn" type="button">Kaart</button>
+      <button id="view-fav" class="view-btn" type="button">♥ Favorieten</button>
     </section>
     <section class="controls" aria-label="Filters en sortering">
       <input id="search" class="control" type="search" placeholder="Zoek op naam of adres…" />
@@ -57,6 +59,7 @@ const els = {
   map: document.querySelector('#map'),
   viewList: document.querySelector('#view-list'),
   viewMap: document.querySelector('#view-map'),
+  viewFav: document.querySelector('#view-fav'),
 };
 
 const state = {
@@ -66,7 +69,7 @@ const state = {
   zip: '',
   sortKey: 'name',
   sortDir: 'asc',
-  view: 'list', // 'list' | 'map'
+  view: 'list', // 'list' | 'map' | 'favorites'
 };
 
 // Vult een <select> met opties (createElement i.p.v. innerHTML zodat
@@ -91,30 +94,37 @@ const update = () => {
   const filtered = filterPlaces(state.allPlaces, state);
   const sorted = sortPlaces(filtered, state.sortKey, state.sortDir);
 
-  const isMap = state.view === 'map';
-  els.results.hidden = isMap;
-  els.map.hidden = !isMap;
+  els.results.hidden = state.view === 'map';
+  els.map.hidden = state.view !== 'map';
 
-  if (isMap) {
+  if (state.view === 'map') {
     initMap(els.map);
     const shown = renderMarkers(sorted, openModal);
     els.status.textContent = `${shown} van ${state.allPlaces.length} locaties op de kaart (locaties zonder coördinaten worden niet getoond).`;
+  } else if (state.view === 'favorites') {
+    const favorites = sorted.filter((place) => isFavorite(place.id));
+    renderList(favorites, els.results);
+    els.status.textContent = favorites.length
+      ? `${favorites.length} favoriet(en) getoond.`
+      : 'Nog geen favorieten — klik op een ♡ in de lijst.';
   } else {
     renderList(sorted, els.results);
     els.status.textContent = `${sorted.length} van ${state.allPlaces.length} locaties getoond.`;
   }
 };
 
-// Wisselt tussen lijst- en kaartweergave.
+// Wisselt tussen lijst-, kaart- en favorietenweergave.
 const setView = (view) => {
   state.view = view;
   els.viewList.classList.toggle('is-active', view === 'list');
   els.viewMap.classList.toggle('is-active', view === 'map');
+  els.viewFav.classList.toggle('is-active', view === 'favorites');
   update();
 };
 
 els.viewList.addEventListener('click', () => setView('list'));
 els.viewMap.addEventListener('click', () => setView('map'));
+els.viewFav.addEventListener('click', () => setView('favorites'));
 
 // Zoeken is gedebounced (300 ms) zodat we niet bij elke toetsaanslag filteren.
 els.search.addEventListener(
@@ -164,14 +174,33 @@ const openRow = (target) => {
   if (place) openModal(place);
 };
 
+// Werkt het uiterlijk van een hartje bij na een toggle.
+const refreshFavButton = (button, nowFav) => {
+  button.classList.toggle('is-fav', nowFav);
+  button.textContent = nowFav ? '♥' : '♡';
+  button.setAttribute('aria-pressed', String(nowFav));
+  button.setAttribute(
+    'aria-label',
+    nowFav ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten',
+  );
+};
+
 els.results.addEventListener('click', (event) => {
+  const favButton = event.target.closest('.fav-btn');
+  if (favButton) {
+    const nowFav = toggleFavorite(favButton.dataset.fav);
+    refreshFavButton(favButton, nowFav);
+    // In de favorietenweergave verdwijnt een rij die je uit favorieten haalt.
+    if (state.view === 'favorites') update();
+    return;
+  }
   if (event.target.closest('a')) return; // links binnen de rij gewoon laten werken
   openRow(event.target);
 });
 
 els.results.addEventListener('keydown', (event) => {
   if (event.key !== 'Enter' && event.key !== ' ') return;
-  if (event.target.closest('a')) return;
+  if (!event.target.matches('tr[data-id]')) return; // enkel de rij zelf
   event.preventDefault(); // voorkom scrollen bij spatie
   openRow(event.target);
 });

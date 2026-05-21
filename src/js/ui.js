@@ -1,5 +1,6 @@
-// ui.js — DOM rendering van de lijst-view (tabel met 6 kolommen).
-// De detail-modal volgt in stap 5.
+// ui.js — DOM rendering van de lijst-view (tabel met 6 kolommen),
+// het favoriet-hartje per rij en de detail-modal.
+import { isFavorite } from './favorites.js';
 
 const FALLBACK = '—';
 
@@ -80,11 +81,35 @@ export const localizePlace = (record, lang = 'nl') => {
 export const localizeAll = (records, lang = 'nl') =>
   records.map((record) => localizePlace(record, lang));
 
+// Bouwt het favoriet-hartje (toggle-knop) voor een place.
+export const buildFavButton = (place) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'fav-btn';
+  button.dataset.fav = place.id;
+
+  const fav = isFavorite(place.id);
+  button.classList.toggle('is-fav', fav);
+  button.textContent = fav ? '♥' : '♡';
+  button.setAttribute('aria-pressed', String(fav));
+  button.setAttribute(
+    'aria-label',
+    fav ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten',
+  );
+
+  return button;
+};
+
 // Bouwt één tabelrij voor een place.
 const buildRow = (place) => {
   const row = document.createElement('tr');
   row.dataset.id = place.id;
   row.tabIndex = 0; // focusbaar zodat de rij ook met toetsenbord te openen is
+
+  const favCell = document.createElement('td');
+  favCell.className = 'fav-cell';
+  favCell.appendChild(buildFavButton(place));
+  row.appendChild(favCell);
 
   COLUMNS.forEach((col) => {
     const cell = document.createElement('td');
@@ -124,7 +149,7 @@ export const renderList = (places, container) => {
 
   // Kolomkoppen via template literal.
   const thead = document.createElement('thead');
-  thead.innerHTML = `<tr>${COLUMNS.map((col) => `<th>${col.label}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr><th class="fav-cell"><span class="sr-only">Favoriet</span></th>${COLUMNS.map((col) => `<th>${col.label}</th>`).join('')}</tr>`;
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
