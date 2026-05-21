@@ -110,12 +110,13 @@ const fillSelect = (select, values, allLabel) => {
   allOption.textContent = allLabel;
   select.appendChild(allOption);
 
-  values.forEach((value) => {
+  // for...of om elke filterwaarde als <option> toe te voegen.
+  for (const value of values) {
     const option = document.createElement('option');
     option.value = value;
     option.textContent = value;
     select.appendChild(option);
-  });
+  }
 };
 
 // Bewaart de huidige filter-state zodat ze bij een herbezoek hersteld wordt.
