@@ -84,6 +84,7 @@ export const localizeAll = (records, lang = 'nl') =>
 const buildRow = (place) => {
   const row = document.createElement('tr');
   row.dataset.id = place.id;
+  row.tabIndex = 0; // focusbaar zodat de rij ook met toetsenbord te openen is
 
   COLUMNS.forEach((col) => {
     const cell = document.createElement('td');
@@ -131,4 +132,118 @@ export const renderList = (places, container) => {
   table.appendChild(tbody);
 
   container.appendChild(table);
+};
+
+// --- Detail-modal --------------------------------------------------------
+
+// Formatteert een ISO-datum naar een leesbare Nederlandse datum.
+const formatDate = (iso) => {
+  if (!iso) return FALLBACK;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? FALLBACK
+    : new Intl.DateTimeFormat('nl-BE', { dateStyle: 'long' }).format(date);
+};
+
+// Voegt een rij (label + waarde) toe aan de definitielijst. Lege of onbekende
+// waarden worden overgeslagen. Met een href wordt de waarde een veilige link.
+const addRow = (dl, label, text, href = null) => {
+  if (!text || text === FALLBACK) return;
+  const dt = document.createElement('dt');
+  dt.textContent = label;
+  const dd = document.createElement('dd');
+  if (href) {
+    const link = document.createElement('a');
+    link.href = href;
+    link.textContent = text;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    dd.appendChild(link);
+  } else {
+    dd.textContent = text;
+  }
+  dl.append(dt, dd);
+};
+
+// Vult de modal met alle beschikbare velden van een place.
+const fillDetail = (body, place) => {
+  body.textContent = '';
+  const raw = place.raw;
+
+  const title = document.createElement('h2');
+  title.id = 'modal-title';
+  title.textContent = place.name;
+  body.appendChild(title);
+
+  // Categorieën als "chips".
+  if (place.categories.length) {
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+    place.categories.forEach((category) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = category;
+      chips.appendChild(chip);
+    });
+    body.appendChild(chips);
+  }
+
+  const dl = document.createElement('dl');
+  dl.className = 'detail';
+
+  const fullAddress = [place.address, `${place.zip} ${place.municipality}`.trim()]
+    .filter((part) => part && part !== FALLBACK)
+    .join(', ');
+
+  const phoneHref =
+    place.phone !== FALLBACK ? `tel:${place.phone.replace(/\s+/g, '')}` : null;
+  const emailHref = place.email !== FALLBACK ? `mailto:${place.email}` : null;
+  const websiteHref = place.website !== FALLBACK ? toHref(place.website) : null;
+
+  const facebook = pick(raw.facebook_link);
+  const maps = pick(raw.google_maps);
+  const streetView = pick(raw.google_street_view);
+  const accessibility = pick(raw.pmr_nl, raw.pmr_fr);
+
+  addRow(dl, 'Adres', fullAddress);
+  addRow(dl, 'Telefoon', place.phone, phoneHref);
+  addRow(dl, 'E-mail', place.email, emailHref);
+  addRow(dl, 'Website', place.website, websiteHref);
+  addRow(dl, 'Facebook', facebook !== FALLBACK ? 'Bekijk op Facebook' : FALLBACK, toHref(facebook));
+  addRow(dl, 'Google Maps', maps !== FALLBACK ? 'Open in Google Maps' : FALLBACK, maps !== FALLBACK ? maps : null);
+  addRow(dl, 'Street View', streetView !== FALLBACK ? 'Open Street View' : FALLBACK, streetView !== FALLBACK ? streetView : null);
+  addRow(dl, 'Toegankelijkheid', accessibility);
+  addRow(dl, 'Coördinaten', place.lat && place.lon ? `${place.lat}, ${place.lon}` : FALLBACK);
+  addRow(dl, 'Gepubliceerd', formatDate(place.publishedAt));
+  addRow(dl, 'Laatst bijgewerkt', formatDate(raw.last_updated_at));
+
+  body.appendChild(dl);
+};
+
+// De modal wordt één keer aangemaakt en hergebruikt.
+let dialog = null;
+
+const buildDialog = () => {
+  const el = document.createElement('dialog');
+  el.className = 'modal';
+  el.setAttribute('aria-labelledby', 'modal-title');
+  el.innerHTML = `
+    <button class="modal__close" type="button" aria-label="Sluiten">&times;</button>
+    <div class="modal__body"></div>
+  `;
+  // Sluiten via de knop.
+  el.querySelector('.modal__close').addEventListener('click', () => el.close());
+  // Sluiten bij klik op de achtergrond (buiten de inhoud).
+  el.addEventListener('click', (event) => {
+    if (event.target === el) el.close();
+  });
+  document.body.appendChild(el);
+  return el;
+};
+
+// Opent de detail-modal voor een place. Escape sluit automatisch (native dialog).
+export const openModal = (place) => {
+  if (!dialog) dialog = buildDialog();
+  fillDetail(dialog.querySelector('.modal__body'), place);
+  dialog.showModal();
 };

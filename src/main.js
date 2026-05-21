@@ -3,7 +3,7 @@
 // telkens de state verandert. Kaart, favorieten en voorkeuren komen later.
 import './css/style.css';
 import { fetchPlaces } from './js/api.js';
-import { localizeAll, renderList } from './js/ui.js';
+import { localizeAll, renderList, openModal } from './js/ui.js';
 import {
   filterPlaces,
   sortPlaces,
@@ -122,6 +122,26 @@ els.reset.addEventListener('click', () => {
   els.category.value = '';
   els.zip.value = '';
   update();
+});
+
+// Opent de detail-modal voor de aangeklikte rij (event-delegatie).
+const openRow = (target) => {
+  const row = target.closest('tr[data-id]');
+  if (!row) return;
+  const place = state.allPlaces.find((item) => String(item.id) === row.dataset.id);
+  if (place) openModal(place);
+};
+
+els.results.addEventListener('click', (event) => {
+  if (event.target.closest('a')) return; // links binnen de rij gewoon laten werken
+  openRow(event.target);
+});
+
+els.results.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  if (event.target.closest('a')) return;
+  event.preventDefault(); // voorkom scrollen bij spatie
+  openRow(event.target);
 });
 
 // .then / .catch om het Promise-resultaat van fetchPlaces te verwerken.
