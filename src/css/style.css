@@ -13,6 +13,26 @@
   --color-muted: #6b6b70;
   --color-accent: #1d4ed8;
   --color-border: #e2e2e6;
+  --color-subtle: #f0f0f3;
+  --color-hover: #f5f8ff;
+  --color-chip-bg: #eef2ff;
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #161619;
+  --color-surface: #1f1f24;
+  --color-text: #ececf1;
+  --color-muted: #a0a0a8;
+  --color-accent: #6ea8fe;
+  --color-border: #34343c;
+  --color-subtle: #26262c;
+  --color-hover: #2a2f3a;
+  --color-chip-bg: #25304a;
+}
+
+/* Vloeiende overgang bij het wisselen van thema */
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 body {
@@ -24,6 +44,11 @@ body {
 }
 
 .app-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
   padding: 1.5rem 1rem;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
@@ -36,6 +61,16 @@ body {
 .app-header p {
   margin: 0;
   color: var(--color-muted);
+}
+
+.app-header__actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#theme-toggle {
+  cursor: pointer;
 }
 
 .app-main {
@@ -150,7 +185,7 @@ button.control:hover {
 }
 
 .places-table th {
-  background: #f0f0f3;
+  background: var(--color-subtle);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -163,7 +198,7 @@ button.control:hover {
 
 .places-table tbody tr:hover,
 .places-table tbody tr:focus-visible {
-  background: #f5f8ff;
+  background: var(--color-hover);
   outline: none;
 }
 
@@ -246,7 +281,7 @@ button.control:hover {
 }
 
 .modal__close:hover {
-  background: #f0f0f3;
+  background: var(--color-subtle);
   color: var(--color-text);
 }
 
@@ -265,7 +300,7 @@ button.control:hover {
   padding: 0.2rem 0.6rem;
   font-size: 0.8rem;
   border-radius: 999px;
-  background: #eef2ff;
+  background: var(--color-chip-bg);
   color: var(--color-accent);
 }
 

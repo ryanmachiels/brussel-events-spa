@@ -1,6 +1,6 @@
 // Entry point van de applicatie.
-// Houdt de UI-state bij (zoekterm, filters, sortering) en hertekent de lijst
-// telkens de state verandert. Kaart, favorieten en voorkeuren komen later.
+// Houdt de UI-state bij (zoekterm, filters, sortering, taal, view) en
+// hertekent de actieve weergave telkens de state verandert.
 import './css/style.css';
 import { fetchPlaces } from './js/api.js';
 import { localizeAll, renderList, openModal } from './js/ui.js';
@@ -13,15 +13,31 @@ import {
 } from './js/filters.js';
 import { initMap, renderMarkers } from './js/map.js';
 import { toggleFavorite, isFavorite } from './js/favorites.js';
-
-const LANG = 'nl'; // taalswitcher volgt in stap 8
+import {
+  getTheme,
+  setTheme,
+  applyTheme,
+  getLang,
+  setLang,
+  getFilterState,
+  saveFilterState,
+} from './js/preferences.js';
 
 const app = document.querySelector('#app');
 
 app.innerHTML = `
   <header class="app-header">
-    <h1>Brussel Events</h1>
-    <p>Culturele, toeristische en evenementlocaties uit de Brussel Open Data API.</p>
+    <div class="app-header__titles">
+      <h1>Brussel Events</h1>
+      <p>Culturele, toeristische en evenementlocaties uit de Brussel Open Data API.</p>
+    </div>
+    <div class="app-header__actions">
+      <select id="lang" class="control" aria-label="Taal">
+        <option value="nl">NL</option>
+        <option value="fr">FR</option>
+      </select>
+      <button id="theme-toggle" class="control" type="button">🌙</button>
+    </div>
   </header>
   <main class="app-main">
     <section class="view-switch" role="tablist" aria-label="Weergave">
@@ -60,10 +76,14 @@ const els = {
   viewList: document.querySelector('#view-list'),
   viewMap: document.querySelector('#view-map'),
   viewFav: document.querySelector('#view-fav'),
+  lang: document.querySelector('#lang'),
+  themeToggle: document.querySelector('#theme-toggle'),
 };
 
 const state = {
+  rawItems: [], // ruwe API-records (om bij taalwissel te hertalen)
   allPlaces: [],
+  lang: 'nl',
   search: '',
   category: '',
   zip: '',
@@ -89,6 +109,18 @@ const fillSelect = (select, values, allLabel) => {
   });
 };
 
+// Bewaart de huidige filter-state zodat ze bij een herbezoek hersteld wordt.
+const persistFilters = () => {
+  saveFilterState({
+    search: state.search,
+    category: state.category,
+    zip: state.zip,
+    sortKey: state.sortKey,
+    sortDir: state.sortDir,
+    view: state.view,
+  });
+};
+
 // Past de huidige filters + sortering toe en hertekent de actieve view.
 const update = () => {
   const filtered = filterPlaces(state.allPlaces, state);
@@ -111,14 +143,21 @@ const update = () => {
     renderList(sorted, els.results);
     els.status.textContent = `${sorted.length} van ${state.allPlaces.length} locaties getoond.`;
   }
+
+  persistFilters();
+};
+
+// Markeert de actieve view-knop.
+const applyViewButtons = (view) => {
+  els.viewList.classList.toggle('is-active', view === 'list');
+  els.viewMap.classList.toggle('is-active', view === 'map');
+  els.viewFav.classList.toggle('is-active', view === 'favorites');
 };
 
 // Wisselt tussen lijst-, kaart- en favorietenweergave.
 const setView = (view) => {
   state.view = view;
-  els.viewList.classList.toggle('is-active', view === 'list');
-  els.viewMap.classList.toggle('is-active', view === 'map');
-  els.viewFav.classList.toggle('is-active', view === 'favorites');
+  applyViewButtons(view);
   update();
 };
 
@@ -205,12 +244,72 @@ els.results.addEventListener('keydown', (event) => {
   openRow(event.target);
 });
 
+// --- Voorkeuren: thema -----------------------------------------------------
+const updateThemeButton = (theme) => {
+  els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+  els.themeToggle.setAttribute(
+    'aria-label',
+    theme === 'dark' ? 'Schakel naar licht thema' : 'Schakel naar donker thema',
+  );
+};
+
+els.themeToggle.addEventListener('click', () => {
+  const next = getTheme() === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+  updateThemeButton(next);
+});
+
+// --- Voorkeuren: taal ------------------------------------------------------
+// Categorie-namen verschillen per taal, dus we hertalen de places, herbouwen
+// de categorie-dropdown en resetten de categorie-filter.
+els.lang.addEventListener('change', (event) => {
+  state.lang = event.target.value;
+  setLang(state.lang);
+  state.allPlaces = localizeAll(state.rawItems, state.lang);
+  state.category = '';
+  fillSelect(els.category, getCategories(state.allPlaces), 'Alle categorieën');
+  update();
+});
+
+// Bestaat de waarde als optie in de select? (leeg = "alle" mag altijd)
+const optionExists = (select, value) =>
+  value === '' || [...select.options].some((option) => option.value === value);
+
+// Herstel de voorkeuren vóór de data binnenkomt.
+applyTheme(getTheme());
+updateThemeButton(getTheme());
+state.lang = getLang();
+els.lang.value = state.lang;
+
+const savedFilters = getFilterState();
+if (savedFilters) {
+  Object.assign(state, savedFilters);
+  els.search.value = state.search;
+  els.sortKey.value = state.sortKey;
+  els.sortDir.textContent = state.sortDir === 'asc' ? '▲ Oplopend' : '▼ Aflopend';
+  applyViewButtons(state.view);
+}
+
 // .then / .catch om het Promise-resultaat van fetchPlaces te verwerken.
 fetchPlaces()
   .then(({ items }) => {
-    state.allPlaces = localizeAll(items, LANG);
+    state.rawItems = items;
+    state.allPlaces = localizeAll(items, state.lang);
     fillSelect(els.category, getCategories(state.allPlaces), 'Alle categorieën');
     fillSelect(els.zip, getZips(state.allPlaces), 'Alle postcodes');
+
+    // Herstel de bewaarde filter-selecties als ze nog geldig zijn.
+    if (optionExists(els.category, state.category)) {
+      els.category.value = state.category;
+    } else {
+      state.category = '';
+    }
+    if (optionExists(els.zip, state.zip)) {
+      els.zip.value = state.zip;
+    } else {
+      state.zip = '';
+    }
+
     update();
   })
   .catch((error) => {
