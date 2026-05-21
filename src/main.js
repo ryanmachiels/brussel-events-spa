@@ -3,7 +3,14 @@
 // hertekent de actieve weergave telkens de state verandert.
 import './css/style.css';
 import { fetchPlaces } from './js/api.js';
-import { localizeAll, renderList, openModal } from './js/ui.js';
+import {
+  localizeAll,
+  renderList,
+  renderEmpty,
+  buildTableSkeleton,
+  appendRows,
+  openModal,
+} from './js/ui.js';
 import {
   filterPlaces,
   sortPlaces,
@@ -13,6 +20,7 @@ import {
 } from './js/filters.js';
 import { initMap, renderMarkers } from './js/map.js';
 import { toggleFavorite, isFavorite } from './js/favorites.js';
+import { createInfiniteScroll } from './js/observer.js';
 import {
   getTheme,
   setTheme,
@@ -121,8 +129,42 @@ const persistFilters = () => {
   });
 };
 
+// Houdt de actieve infinite-scroll-controller bij zodat we hem kunnen opruimen.
+let scrollController = null;
+
+// Rendert de lijstweergave met infinite scroll (IntersectionObserver).
+const renderInfiniteList = (places) => {
+  els.results.textContent = '';
+
+  if (places.length === 0) {
+    renderEmpty(els.results, 'Geen locaties gevonden.');
+    return;
+  }
+
+  const { table, tbody } = buildTableSkeleton();
+  const sentinel = document.createElement('div');
+  sentinel.className = 'scroll-sentinel';
+  els.results.append(table, sentinel);
+
+  scrollController = createInfiniteScroll({
+    items: places,
+    sentinel,
+    appendBatch: (batch) => appendRows(tbody, batch),
+    onProgress: (shown, total) => {
+      sentinel.textContent = shown >= total ? '' : 'Meer laden tijdens het scrollen…';
+      els.status.textContent = `${shown} van ${total} getoonde locaties geladen.`;
+    },
+  });
+};
+
 // Past de huidige filters + sortering toe en hertekent de actieve view.
 const update = () => {
+  // Vorige observer opruimen om geheugenlekken te vermijden.
+  if (scrollController) {
+    scrollController.destroy();
+    scrollController = null;
+  }
+
   const filtered = filterPlaces(state.allPlaces, state);
   const sorted = sortPlaces(filtered, state.sortKey, state.sortDir);
 
@@ -140,8 +182,7 @@ const update = () => {
       ? `${favorites.length} favoriet(en) getoond.`
       : 'Nog geen favorieten — klik op een ♡ in de lijst.';
   } else {
-    renderList(sorted, els.results);
-    els.status.textContent = `${sorted.length} van ${state.allPlaces.length} locaties getoond.`;
+    renderInfiniteList(sorted);
   }
 
   persistFilters();

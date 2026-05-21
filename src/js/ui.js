@@ -132,18 +132,8 @@ const buildRow = (place) => {
   return row;
 };
 
-// Rendert de lijst van places als tabel in de gegeven container.
-export const renderList = (places, container) => {
-  container.textContent = ''; // bestaande inhoud wissen
-
-  if (places.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'empty-state';
-    empty.textContent = 'Geen locaties gevonden.';
-    container.appendChild(empty);
-    return;
-  }
-
+// Bouwt een leeg tabelskelet (kop + lege tbody) en geeft beide terug.
+export const buildTableSkeleton = () => {
   const table = document.createElement('table');
   table.className = 'places-table';
 
@@ -153,9 +143,36 @@ export const renderList = (places, container) => {
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-  places.forEach((place) => tbody.appendChild(buildRow(place)));
   table.appendChild(tbody);
 
+  return { table, tbody };
+};
+
+// Voegt een batch rijen toe aan een bestaande tbody (gebruikt door infinite scroll).
+export const appendRows = (tbody, places) => {
+  places.forEach((place) => tbody.appendChild(buildRow(place)));
+};
+
+// Toont een lege-staat-bericht in de container.
+export const renderEmpty = (container, message) => {
+  container.textContent = '';
+  const empty = document.createElement('p');
+  empty.className = 'empty-state';
+  empty.textContent = message;
+  container.appendChild(empty);
+};
+
+// Rendert de volledige lijst in één keer (gebruikt voor de favorietenweergave).
+export const renderList = (places, container) => {
+  container.textContent = '';
+
+  if (places.length === 0) {
+    renderEmpty(container, 'Geen locaties gevonden.');
+    return;
+  }
+
+  const { table, tbody } = buildTableSkeleton();
+  appendRows(tbody, places);
   container.appendChild(table);
 };
 

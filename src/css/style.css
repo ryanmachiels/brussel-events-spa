@@ -211,6 +211,15 @@ button.control:hover {
   color: var(--color-muted);
 }
 
+/* Sentinel voor infinite scroll */
+.scroll-sentinel {
+  min-height: 1.5rem;
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
 /* Favoriet-hartje */
 .fav-cell {
   width: 2.5rem;
