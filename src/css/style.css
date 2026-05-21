@@ -6,40 +6,50 @@
 }
 
 :root {
-  --color-bg: #f7f7f8;
+  --color-bg: #f6f7f9;
   --color-surface: #ffffff;
-  --color-text: #1c1c1e;
-  --color-muted: #6b6b70;
-  --color-accent: #1d4ed8;
-  --color-border: #e2e2e6;
-  --color-subtle: #f0f0f3;
-  --color-hover: #f5f8ff;
+  --color-text: #18181b;
+  --color-muted: #6b7280;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-border: #e5e7eb;
+  --color-subtle: #f3f4f6;
+  --color-hover: #f5f3ff;
   --color-chip-bg: #eef2ff;
+  --color-skeleton: #e5e7eb;
+  --color-skeleton-shine: #f3f4f6;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06), 0 1px 3px rgba(17, 24, 39, 0.08);
+  --shadow-md: 0 4px 12px rgba(17, 24, 39, 0.08), 0 2px 6px rgba(17, 24, 39, 0.06);
+  --shadow-lg: 0 12px 40px rgba(17, 24, 39, 0.18);
 }
 
 :root[data-theme="dark"] {
-  --color-bg: #161619;
-  --color-surface: #1f1f24;
+  --color-bg: #131316;
+  --color-surface: #1c1c21;
   --color-text: #ececf1;
-  --color-muted: #a0a0a8;
-  --color-accent: #6ea8fe;
-  --color-border: #34343c;
+  --color-muted: #9ca3af;
+  --color-accent: #818cf8;
+  --color-accent-hover: #a5b4fc;
+  --color-border: #2e2e36;
   --color-subtle: #26262c;
-  --color-hover: #2a2f3a;
-  --color-chip-bg: #25304a;
-}
-
-/* Vloeiende overgang bij het wisselen van thema */
-body {
-  transition: background-color 0.2s ease, color 0.2s ease;
+  --color-hover: #25252e;
+  --color-chip-bg: #2a2f4a;
+  --color-skeleton: #2a2a31;
+  --color-skeleton-shine: #34343c;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.5;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
   color: var(--color-text);
   background: var(--color-bg);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .app-header {
@@ -48,18 +58,25 @@ body {
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem 1rem;
-  background: var(--color-surface);
+  padding: 1.5rem 1.25rem;
+  background: linear-gradient(135deg, var(--color-surface), var(--color-subtle));
   border-bottom: 1px solid var(--color-border);
 }
 
 .app-header h1 {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.2rem;
+  font-size: 1.65rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--color-accent), #9333ea);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .app-header p {
   margin: 0;
   color: var(--color-muted);
+  font-size: 0.95rem;
 }
 
 .app-header__actions {
@@ -69,7 +86,19 @@ body {
 }
 
 #theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
   cursor: pointer;
+  color: var(--color-text);
+}
+
+#theme-toggle:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .app-main {
@@ -78,34 +107,81 @@ body {
   padding: 1rem;
 }
 
-/* Lijst/kaart-schakelaar */
-.view-switch {
+/* Toolbar: view-schakelaar links, indeling-schakelaar rechts */
+.toolbar {
   display: flex;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1rem;
 }
 
+/* Lijst/kaart/favorieten-schakelaar */
+.view-switch {
+  display: flex;
+}
+
 .view-btn {
-  padding: 0.45rem 1rem;
-  font-size: 0.95rem;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  font-weight: 500;
   cursor: pointer;
   border: 1px solid var(--color-border);
+  border-right-width: 0;
   background: var(--color-surface);
   color: var(--color-text);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .view-btn:first-child {
-  border-radius: 6px 0 0 6px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
 .view-btn:last-child {
-  border-radius: 0 6px 6px 0;
+  border-right-width: 1px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.view-btn:hover {
+  background: var(--color-subtle);
 }
 
 .view-btn.is-active {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: #fff;
+}
+
+/* Indeling-schakelaar (raster/tabel) */
+.layout-switch {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  cursor: pointer;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  transition: all 0.15s ease;
+}
+
+.icon-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.icon-btn.is-active {
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 /* Kaart */
@@ -126,25 +202,44 @@ body {
   color: #fff;
 }
 
-/* Filter-/sorteerbalk */
+/* Filter-/sorteerbalk (sticky bovenaan bij scrollen) */
 .controls {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  padding: 0.75rem 0;
   margin-bottom: 1rem;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .control {
-  padding: 0.5rem 0.7rem;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
   font-size: 0.95rem;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.control:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+/* Zoekveld met magnifier-icoon */
 #search {
   flex: 1 1 220px;
+  padding-left: 2.1rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.65rem center;
 }
 
 button.control {
@@ -154,6 +249,18 @@ button.control {
 button.control:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+/* Sorteer-richting-knop: SVG-pijl + label */
+#sort-dir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#sort-dir svg {
+  width: 16px;
+  height: 16px;
 }
 
 .status {
@@ -171,8 +278,9 @@ button.control:hover {
   border-collapse: collapse;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .places-table th,
@@ -219,6 +327,120 @@ button.control:hover {
   color: var(--color-muted);
 }
 
+/* Card-grid weergave */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+  outline: none;
+}
+
+.card__title {
+  margin: 0;
+  padding-right: 2rem; /* ruimte voor het hartje rechtsboven */
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.card__fav {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+}
+
+.card .chips {
+  margin: 0;
+}
+
+.card__meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.card__link {
+  align-self: flex-start;
+  margin-top: auto;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.card__link:hover {
+  text-decoration: underline;
+}
+
+/* Skeleton-laadtoestand */
+.skeleton-card {
+  cursor: default;
+  pointer-events: none;
+}
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--color-skeleton) 25%,
+    var(--color-skeleton-shine) 37%,
+    var(--color-skeleton) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+.skeleton--title {
+  height: 1.1rem;
+  width: 70%;
+}
+
+.skeleton--chip {
+  height: 0.9rem;
+  width: 40%;
+}
+
+.skeleton--line {
+  height: 0.9rem;
+  width: 90%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 /* Favoriet-hartje */
 .fav-cell {
   width: 2.5rem;
@@ -226,18 +448,28 @@ button.control:hover {
 }
 
 .fav-btn {
-  padding: 0;
-  font-size: 1.25rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
   cursor: pointer;
   border: none;
   background: none;
-  color: #c7c7cc;
-  transition: color 0.15s ease;
+  color: #c0c0c8;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.fav-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .fav-btn:hover {
   color: #e0245e;
+}
+
+.fav-btn:active {
+  transform: scale(0.85);
 }
 
 .fav-btn.is-fav {
@@ -263,10 +495,10 @@ button.control:hover {
   max-height: 85vh;
   padding: 1.5rem;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
 }
 
 .modal::backdrop {
@@ -487,7 +719,8 @@ button.control:hover {
     content: none;
   }
 
-  .fav-btn {
-    font-size: 1.5rem;
+  .fav-btn svg {
+    width: 24px;
+    height: 24px;
   }
 }
