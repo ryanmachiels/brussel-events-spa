@@ -11,6 +11,7 @@ import {
   getZips,
   debounce,
 } from './js/filters.js';
+import { initMap, renderMarkers } from './js/map.js';
 
 const LANG = 'nl'; // taalswitcher volgt in stap 8
 
@@ -22,6 +23,10 @@ app.innerHTML = `
     <p>Culturele, toeristische en evenementlocaties uit de Brussel Open Data API.</p>
   </header>
   <main class="app-main">
+    <section class="view-switch" role="tablist" aria-label="Weergave">
+      <button id="view-list" class="view-btn is-active" type="button">Lijst</button>
+      <button id="view-map" class="view-btn" type="button">Kaart</button>
+    </section>
     <section class="controls" aria-label="Filters en sortering">
       <input id="search" class="control" type="search" placeholder="Zoek op naam of adres…" />
       <select id="filter-category" class="control" aria-label="Filter op categorie"></select>
@@ -36,6 +41,7 @@ app.innerHTML = `
     </section>
     <p id="status" class="status">Data laden…</p>
     <section id="results" class="results" aria-live="polite"></section>
+    <div id="map" class="map" hidden></div>
   </main>
 `;
 
@@ -48,6 +54,9 @@ const els = {
   reset: document.querySelector('#reset'),
   status: document.querySelector('#status'),
   results: document.querySelector('#results'),
+  map: document.querySelector('#map'),
+  viewList: document.querySelector('#view-list'),
+  viewMap: document.querySelector('#view-map'),
 };
 
 const state = {
@@ -57,6 +66,7 @@ const state = {
   zip: '',
   sortKey: 'name',
   sortDir: 'asc',
+  view: 'list', // 'list' | 'map'
 };
 
 // Vult een <select> met opties (createElement i.p.v. innerHTML zodat
@@ -76,13 +86,35 @@ const fillSelect = (select, values, allLabel) => {
   });
 };
 
-// Past de huidige filters + sortering toe en hertekent de lijst.
+// Past de huidige filters + sortering toe en hertekent de actieve view.
 const update = () => {
   const filtered = filterPlaces(state.allPlaces, state);
   const sorted = sortPlaces(filtered, state.sortKey, state.sortDir);
-  renderList(sorted, els.results);
-  els.status.textContent = `${sorted.length} van ${state.allPlaces.length} locaties getoond.`;
+
+  const isMap = state.view === 'map';
+  els.results.hidden = isMap;
+  els.map.hidden = !isMap;
+
+  if (isMap) {
+    initMap(els.map);
+    const shown = renderMarkers(sorted, openModal);
+    els.status.textContent = `${shown} van ${state.allPlaces.length} locaties op de kaart (locaties zonder coördinaten worden niet getoond).`;
+  } else {
+    renderList(sorted, els.results);
+    els.status.textContent = `${sorted.length} van ${state.allPlaces.length} locaties getoond.`;
+  }
 };
+
+// Wisselt tussen lijst- en kaartweergave.
+const setView = (view) => {
+  state.view = view;
+  els.viewList.classList.toggle('is-active', view === 'list');
+  els.viewMap.classList.toggle('is-active', view === 'map');
+  update();
+};
+
+els.viewList.addEventListener('click', () => setView('list'));
+els.viewMap.addEventListener('click', () => setView('map'));
 
 // Zoeken is gedebounced (300 ms) zodat we niet bij elke toetsaanslag filteren.
 els.search.addEventListener(
