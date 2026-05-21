@@ -11,9 +11,10 @@ dist/
 *.log
 npm-debug.log*
 
-# Editor / OS
+# Editor / OS / tooling
 .vscode/
 .idea/
+.claude/settings.local.json
 .DS_Store
 Thumbs.db
 
@@ -24,3 +25,6 @@ Thumbs.db
 
 # Git installer (hoort niet in de repo)
 Git-*.exe
+
+# Opgave-document (hoort niet in de repo)
+*.docx
