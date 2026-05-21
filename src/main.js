@@ -10,6 +10,7 @@ import {
   buildTableSkeleton,
   appendRows,
   openModal,
+  setOnFavoriteChange,
 } from './js/ui.js';
 import {
   filterPlaces,
@@ -205,6 +206,9 @@ const setView = (view) => {
 els.viewList.addEventListener('click', () => setView('list'));
 els.viewMap.addEventListener('click', () => setView('map'));
 els.viewFav.addEventListener('click', () => setView('favorites'));
+
+// Na het opslaan van een notitie (= favoriet) verversen we de lijst/hartjes.
+setOnFavoriteChange(update);
 
 // Zoeken is gedebounced (300 ms) zodat we niet bij elke toetsaanslag filteren.
 els.search.addEventListener(

@@ -333,3 +333,73 @@ button.control:hover {
 .detail a {
   color: var(--color-accent);
 }
+
+/* Notitie-formulier in de modal */
+.note-form {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.note-form label {
+  display: block;
+  font-weight: 600;
+}
+
+.note-hint {
+  margin: 0.15rem 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.note-input {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+  resize: vertical;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.note-input[aria-invalid="true"] {
+  border-color: #e0245e;
+}
+
+.note-error {
+  min-height: 1.1rem;
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+  color: #e0245e;
+}
+
+.note-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.note-save {
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  color: #fff;
+  background: var(--color-accent);
+  border: none;
+  border-radius: 6px;
+}
+
+.note-saved {
+  font-size: 0.85rem;
+  color: #1a7f37;
+}
+
+.note-counter {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.note-counter.over {
+  color: #e0245e;
+}

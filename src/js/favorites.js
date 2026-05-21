@@ -29,3 +29,15 @@ export const toggleFavorite = (id) => {
   persist(favorites);
   return nowFavorite;
 };
+
+// De persoonlijke notitie bij een favoriet.
+export const getNote = (id) => loadFavorites()[`${id}`]?.note ?? '';
+
+// Bewaart een notitie. Een locatie met een notitie wordt automatisch favoriet.
+export const setNote = (id, note) => {
+  const favorites = loadFavorites();
+  const key = `${id}`;
+  const existing = favorites[key] ?? { note: '' };
+  favorites[key] = { ...existing, note };
+  persist(favorites);
+};

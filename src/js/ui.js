@@ -1,8 +1,16 @@
 // ui.js — DOM rendering van de lijst-view (tabel met 6 kolommen),
-// het favoriet-hartje per rij en de detail-modal.
-import { isFavorite } from './favorites.js';
+// het favoriet-hartje per rij en de detail-modal (incl. notitie-formulier).
+import { isFavorite, getNote, setNote } from './favorites.js';
+import { validateNote, MAX_NOTE_LENGTH } from './validation.js';
 
 const FALLBACK = '—';
+
+// Callback die main.js zet; wordt aangeroepen na het opslaan van een notitie
+// (die de locatie ook favoriet maakt) zodat de lijst/hartjes verversen.
+let onFavoriteChange = null;
+export const setOnFavoriteChange = (fn) => {
+  onFavoriteChange = fn;
+};
 
 // De 6 kolommen van de lijstweergave (sleutel = veld op het genormaliseerde
 // place-object, label = kolomkop).
@@ -207,6 +215,78 @@ const addRow = (dl, label, text, href = null) => {
   dl.append(dt, dd);
 };
 
+// Bouwt het notitie-formulier voor een favoriet (met validatie).
+const buildNoteForm = (place) => {
+  const form = document.createElement('form');
+  form.className = 'note-form';
+  form.noValidate = true; // we valideren zelf voor een eigen foutboodschap
+
+  const label = document.createElement('label');
+  label.setAttribute('for', 'note-input');
+  label.textContent = 'Mijn notitie';
+
+  const hint = document.createElement('p');
+  hint.className = 'note-hint';
+  hint.textContent = `Een notitie bewaren voegt deze locatie toe aan je favorieten (max ${MAX_NOTE_LENGTH} tekens).`;
+
+  const textarea = document.createElement('textarea');
+  textarea.id = 'note-input';
+  textarea.className = 'note-input';
+  textarea.rows = 3;
+  textarea.value = getNote(place.id);
+
+  const counter = document.createElement('span');
+  counter.className = 'note-counter';
+
+  const error = document.createElement('p');
+  error.className = 'note-error';
+  error.setAttribute('role', 'alert');
+
+  const save = document.createElement('button');
+  save.type = 'submit';
+  save.className = 'note-save';
+  save.textContent = 'Notitie opslaan';
+
+  const saved = document.createElement('span');
+  saved.className = 'note-saved';
+  saved.hidden = true;
+  saved.textContent = 'Opgeslagen ✓';
+
+  const updateCounter = () => {
+    const length = textarea.value.trim().length;
+    counter.textContent = `${length}/${MAX_NOTE_LENGTH}`;
+    counter.classList.toggle('over', length > MAX_NOTE_LENGTH);
+  };
+  textarea.addEventListener('input', () => {
+    updateCounter();
+    saved.hidden = true;
+  });
+  updateCounter();
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const result = validateNote(textarea.value);
+    if (!result.valid) {
+      error.textContent = result.error;
+      textarea.setAttribute('aria-invalid', 'true');
+      textarea.focus();
+      return;
+    }
+    error.textContent = '';
+    textarea.removeAttribute('aria-invalid');
+    setNote(place.id, textarea.value.trim());
+    saved.hidden = false;
+    if (onFavoriteChange) onFavoriteChange();
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'note-actions';
+  actions.append(save, saved, counter);
+
+  form.append(label, hint, textarea, error, actions);
+  return form;
+};
+
 // Vult de modal met alle beschikbare velden van een place.
 const fillDetail = (body, place) => {
   body.textContent = '';
@@ -260,6 +340,7 @@ const fillDetail = (body, place) => {
   addRow(dl, 'Laatst bijgewerkt', formatDate(raw.last_updated_at));
 
   body.appendChild(dl);
+  body.appendChild(buildNoteForm(place));
 };
 
 // De modal wordt één keer aangemaakt en hergebruikt.
