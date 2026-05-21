@@ -5,12 +5,15 @@ import './css/style.css';
 import { fetchPlaces } from './js/api.js';
 import {
   localizeAll,
-  renderList,
   renderEmpty,
+  renderSkeleton,
   buildTableSkeleton,
   appendRows,
+  buildCardGrid,
+  appendCards,
   openModal,
   setOnFavoriteChange,
+  setFavButtonState,
 } from './js/ui.js';
 import {
   filterPlaces,
@@ -22,6 +25,14 @@ import {
 import { initMap, renderMarkers } from './js/map.js';
 import { toggleFavorite, isFavorite } from './js/favorites.js';
 import { createInfiniteScroll } from './js/observer.js';
+import {
+  iconMoon,
+  iconSun,
+  iconGrid,
+  iconList,
+  iconArrowUp,
+  iconArrowDown,
+} from './js/icons.js';
 import {
   getTheme,
   setTheme,
@@ -49,10 +60,16 @@ app.innerHTML = `
     </div>
   </header>
   <main class="app-main">
-    <section class="view-switch" role="tablist" aria-label="Weergave">
-      <button id="view-list" class="view-btn is-active" type="button">Lijst</button>
-      <button id="view-map" class="view-btn" type="button">Kaart</button>
-      <button id="view-fav" class="view-btn" type="button">♥ Favorieten</button>
+    <section class="toolbar">
+      <div class="view-switch" role="tablist" aria-label="Weergave">
+        <button id="view-list" class="view-btn is-active" type="button">Lijst</button>
+        <button id="view-map" class="view-btn" type="button">Kaart</button>
+        <button id="view-fav" class="view-btn" type="button">Favorieten</button>
+      </div>
+      <div class="layout-switch" aria-label="Indeling van de lijst">
+        <button id="layout-grid" class="icon-btn is-active" type="button" aria-label="Rasterweergave"></button>
+        <button id="layout-table" class="icon-btn" type="button" aria-label="Tabelweergave"></button>
+      </div>
     </section>
     <section class="controls" aria-label="Filters en sortering">
       <input id="search" class="control" type="search" placeholder="Zoek op naam of adres…" />
@@ -85,9 +102,15 @@ const els = {
   viewList: document.querySelector('#view-list'),
   viewMap: document.querySelector('#view-map'),
   viewFav: document.querySelector('#view-fav'),
+  layoutGrid: document.querySelector('#layout-grid'),
+  layoutTable: document.querySelector('#layout-table'),
   lang: document.querySelector('#lang'),
   themeToggle: document.querySelector('#theme-toggle'),
 };
+
+// SVG-iconen op de icoonknoppen zetten.
+els.layoutGrid.innerHTML = iconGrid;
+els.layoutTable.innerHTML = iconList;
 
 const state = {
   rawItems: [], // ruwe API-records (om bij taalwissel te hertalen)
@@ -99,6 +122,7 @@ const state = {
   sortKey: 'name',
   sortDir: 'asc',
   view: 'list', // 'list' | 'map' | 'favorites'
+  layout: 'grid', // 'grid' | 'table'
 };
 
 // Vult een <select> met opties (createElement i.p.v. innerHTML zodat
@@ -128,30 +152,49 @@ const persistFilters = () => {
     sortKey: state.sortKey,
     sortDir: state.sortDir,
     view: state.view,
+    layout: state.layout,
   });
+};
+
+// Rendert de sorteer-richting-knop (SVG-pijl + label).
+const updateSortDirButton = () => {
+  const asc = state.sortDir === 'asc';
+  els.sortDir.innerHTML = `${asc ? iconArrowUp : iconArrowDown}<span>${asc ? 'Oplopend' : 'Aflopend'}</span>`;
 };
 
 // Houdt de actieve infinite-scroll-controller bij zodat we hem kunnen opruimen.
 let scrollController = null;
 
-// Rendert de lijstweergave met infinite scroll (IntersectionObserver).
-const renderInfiniteList = (places) => {
+// Rendert een lijst met infinite scroll (IntersectionObserver), in de gekozen
+// indeling: tabel (rijen) of raster (kaarten).
+const renderInfiniteList = (places, emptyMessage) => {
   els.results.textContent = '';
 
   if (places.length === 0) {
-    renderEmpty(els.results, 'Geen locaties gevonden.');
+    renderEmpty(els.results, emptyMessage);
+    els.status.textContent = `0 van ${state.allPlaces.length} locaties.`;
     return;
   }
 
-  const { table, tbody } = buildTableSkeleton();
+  let appendBatch;
+  if (state.layout === 'table') {
+    const { table, tbody } = buildTableSkeleton();
+    els.results.appendChild(table);
+    appendBatch = (batch) => appendRows(tbody, batch);
+  } else {
+    const grid = buildCardGrid();
+    els.results.appendChild(grid);
+    appendBatch = (batch) => appendCards(grid, batch);
+  }
+
   const sentinel = document.createElement('div');
   sentinel.className = 'scroll-sentinel';
-  els.results.append(table, sentinel);
+  els.results.appendChild(sentinel);
 
   scrollController = createInfiniteScroll({
     items: places,
     sentinel,
-    appendBatch: (batch) => appendRows(tbody, batch),
+    appendBatch,
     onProgress: (shown, total) => {
       sentinel.textContent = shown >= total ? '' : 'Meer laden tijdens het scrollen…';
       els.status.textContent = `${shown} van ${total} getoonde locaties geladen.`;
@@ -172,6 +215,8 @@ const update = () => {
 
   els.results.hidden = state.view === 'map';
   els.map.hidden = state.view !== 'map';
+  // De indeling-schakelaar is enkel relevant bij lijst/favorieten.
+  els.layoutGrid.parentElement.hidden = state.view === 'map';
 
   if (state.view === 'map') {
     initMap(els.map);
@@ -179,12 +224,9 @@ const update = () => {
     els.status.textContent = `${shown} van ${state.allPlaces.length} locaties op de kaart (locaties zonder coördinaten worden niet getoond).`;
   } else if (state.view === 'favorites') {
     const favorites = sorted.filter((place) => isFavorite(place.id));
-    renderList(favorites, els.results);
-    els.status.textContent = favorites.length
-      ? `${favorites.length} favoriet(en) getoond.`
-      : 'Nog geen favorieten — klik op een ♡ in de lijst.';
+    renderInfiniteList(favorites, 'Nog geen favorieten — klik op een hartje in de lijst.');
   } else {
-    renderInfiniteList(sorted);
+    renderInfiniteList(sorted, 'Geen locaties gevonden.');
   }
 
   persistFilters();
@@ -207,6 +249,21 @@ const setView = (view) => {
 els.viewList.addEventListener('click', () => setView('list'));
 els.viewMap.addEventListener('click', () => setView('map'));
 els.viewFav.addEventListener('click', () => setView('favorites'));
+
+// Markeert de actieve indeling-knop (raster/tabel).
+const applyLayoutButtons = (layout) => {
+  els.layoutGrid.classList.toggle('is-active', layout === 'grid');
+  els.layoutTable.classList.toggle('is-active', layout === 'table');
+};
+
+const setLayout = (layout) => {
+  state.layout = layout;
+  applyLayoutButtons(layout);
+  update();
+};
+
+els.layoutGrid.addEventListener('click', () => setLayout('grid'));
+els.layoutTable.addEventListener('click', () => setLayout('table'));
 
 // Na het opslaan van een notitie (= favoriet) verversen we de lijst/hartjes.
 setOnFavoriteChange(update);
@@ -237,7 +294,7 @@ els.sortKey.addEventListener('change', (event) => {
 
 els.sortDir.addEventListener('click', () => {
   state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-  els.sortDir.textContent = state.sortDir === 'asc' ? '▲ Oplopend' : '▼ Aflopend';
+  updateSortDirButton();
   update();
 });
 
@@ -251,48 +308,38 @@ els.reset.addEventListener('click', () => {
   update();
 });
 
-// Opent de detail-modal voor de aangeklikte rij (event-delegatie).
-const openRow = (target) => {
-  const row = target.closest('tr[data-id]');
-  if (!row) return;
-  const place = state.allPlaces.find((item) => String(item.id) === row.dataset.id);
+// Opent de detail-modal voor het aangeklikte item (rij of kaart).
+const openItem = (target) => {
+  const item = target.closest('[data-id]');
+  if (!item) return;
+  const place = state.allPlaces.find((entry) => String(entry.id) === item.dataset.id);
   if (place) openModal(place);
-};
-
-// Werkt het uiterlijk van een hartje bij na een toggle.
-const refreshFavButton = (button, nowFav) => {
-  button.classList.toggle('is-fav', nowFav);
-  button.textContent = nowFav ? '♥' : '♡';
-  button.setAttribute('aria-pressed', String(nowFav));
-  button.setAttribute(
-    'aria-label',
-    nowFav ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten',
-  );
 };
 
 els.results.addEventListener('click', (event) => {
   const favButton = event.target.closest('.fav-btn');
   if (favButton) {
     const nowFav = toggleFavorite(favButton.dataset.fav);
-    refreshFavButton(favButton, nowFav);
-    // In de favorietenweergave verdwijnt een rij die je uit favorieten haalt.
+    setFavButtonState(favButton, nowFav);
+    // In de favorietenweergave verdwijnt een item dat je uit favorieten haalt.
     if (state.view === 'favorites') update();
     return;
   }
-  if (event.target.closest('a')) return; // links binnen de rij gewoon laten werken
-  openRow(event.target);
+  if (event.target.closest('a')) return; // links binnen het item gewoon laten werken
+  openItem(event.target);
 });
 
 els.results.addEventListener('keydown', (event) => {
   if (event.key !== 'Enter' && event.key !== ' ') return;
-  if (!event.target.matches('tr[data-id]')) return; // enkel de rij zelf
+  if (!event.target.matches('[data-id]')) return; // enkel het item zelf (rij/kaart)
   event.preventDefault(); // voorkom scrollen bij spatie
-  openRow(event.target);
+  openItem(event.target);
 });
 
 // --- Voorkeuren: thema -----------------------------------------------------
 const updateThemeButton = (theme) => {
-  els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+  // In dark mode tonen we een zon (om naar licht te schakelen), en omgekeerd.
+  els.themeToggle.innerHTML = theme === 'dark' ? iconSun : iconMoon;
   els.themeToggle.setAttribute(
     'aria-label',
     theme === 'dark' ? 'Schakel naar licht thema' : 'Schakel naar donker thema',
@@ -332,9 +379,13 @@ if (savedFilters) {
   Object.assign(state, savedFilters);
   els.search.value = state.search;
   els.sortKey.value = state.sortKey;
-  els.sortDir.textContent = state.sortDir === 'asc' ? '▲ Oplopend' : '▼ Aflopend';
-  applyViewButtons(state.view);
 }
+updateSortDirButton();
+applyViewButtons(state.view);
+applyLayoutButtons(state.layout);
+
+// Toon skeleton-placeholders terwijl de data laadt.
+renderSkeleton(els.results);
 
 // .then / .catch om het Promise-resultaat van fetchPlaces te verwerken.
 fetchPlaces()

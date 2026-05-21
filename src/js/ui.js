@@ -2,6 +2,7 @@
 // het favoriet-hartje per rij en de detail-modal (incl. notitie-formulier).
 import { isFavorite, getNote, setNote } from './favorites.js';
 import { validateNote, MAX_NOTE_LENGTH } from './validation.js';
+import { iconHeartFilled, iconHeartOutline } from './icons.js';
 
 const FALLBACK = '—';
 
@@ -89,22 +90,25 @@ export const localizePlace = (record, lang = 'nl') => {
 export const localizeAll = (records, lang = 'nl') =>
   records.map((record) => localizePlace(record, lang));
 
+// Zet het uiterlijk (SVG + state) van een favoriet-knop. Gedeeld door de
+// initiële render (buildFavButton) en de live toggle in main.js.
+export const setFavButtonState = (button, fav) => {
+  button.classList.toggle('is-fav', fav);
+  button.innerHTML = fav ? iconHeartFilled : iconHeartOutline;
+  button.setAttribute('aria-pressed', String(fav));
+  button.setAttribute(
+    'aria-label',
+    fav ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten',
+  );
+};
+
 // Bouwt het favoriet-hartje (toggle-knop) voor een place.
 export const buildFavButton = (place) => {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'fav-btn';
   button.dataset.fav = place.id;
-
-  const fav = isFavorite(place.id);
-  button.classList.toggle('is-fav', fav);
-  button.textContent = fav ? '♥' : '♡';
-  button.setAttribute('aria-pressed', String(fav));
-  button.setAttribute(
-    'aria-label',
-    fav ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten',
-  );
-
+  setFavButtonState(button, isFavorite(place.id));
   return button;
 };
 
@@ -170,18 +174,79 @@ export const renderEmpty = (container, message) => {
   container.appendChild(empty);
 };
 
-// Rendert de volledige lijst in één keer (gebruikt voor de favorietenweergave).
-export const renderList = (places, container) => {
-  container.textContent = '';
+// --- Card-grid weergave ---------------------------------------------------
 
-  if (places.length === 0) {
-    renderEmpty(container, 'Geen locaties gevonden.');
-    return;
+// Bouwt één kaart voor een place (alternatief voor de tabelrij).
+const buildCard = (place) => {
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.dataset.id = place.id;
+  card.tabIndex = 0;
+
+  const fav = buildFavButton(place);
+  fav.classList.add('card__fav');
+
+  const title = document.createElement('h3');
+  title.className = 'card__title';
+  title.textContent = place.name;
+
+  const chips = document.createElement('div');
+  chips.className = 'chips';
+  place.categories.slice(0, 3).forEach((category) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = category;
+    chips.appendChild(chip);
+  });
+
+  const meta = document.createElement('p');
+  meta.className = 'card__meta';
+  const parts = [place.address, `${place.zip} ${place.municipality}`.trim()].filter(
+    (part) => part && part !== FALLBACK,
+  );
+  meta.textContent = parts.join(' · ');
+
+  card.append(fav, title, chips, meta);
+
+  if (place.website !== FALLBACK) {
+    const link = document.createElement('a');
+    link.className = 'card__link';
+    link.href = toHref(place.website);
+    link.textContent = 'Website';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    card.appendChild(link);
   }
 
-  const { table, tbody } = buildTableSkeleton();
-  appendRows(tbody, places);
-  container.appendChild(table);
+  return card;
+};
+
+export const buildCardGrid = () => {
+  const grid = document.createElement('div');
+  grid.className = 'cards';
+  return grid;
+};
+
+export const appendCards = (grid, places) => {
+  places.forEach((place) => grid.appendChild(buildCard(place)));
+};
+
+// Toont skeleton-placeholders tijdens het laden.
+export const renderSkeleton = (container, count = 8) => {
+  container.textContent = '';
+  const grid = document.createElement('div');
+  grid.className = 'cards';
+  for (let i = 0; i < count; i += 1) {
+    const card = document.createElement('div');
+    card.className = 'card skeleton-card';
+    card.innerHTML = `
+      <div class="skeleton skeleton--title"></div>
+      <div class="skeleton skeleton--chip"></div>
+      <div class="skeleton skeleton--line"></div>
+    `;
+    grid.appendChild(card);
+  }
+  container.appendChild(grid);
 };
 
 // --- Detail-modal --------------------------------------------------------
