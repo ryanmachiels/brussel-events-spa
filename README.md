@@ -11,7 +11,7 @@ library met OpenStreetMap-tegels.
 
 ## Functionaliteiten
 
-- **Lijstweergave** met 6 kolommen (naam, categorie, gemeente, adres, postcode, website).
+- **Lijstweergave** met 6 kolommen (naam, categorie, gemeente, adres, postcode, website), met een **raster/tabel-toggle**.
 - **Kaartweergave** (Leaflet + OpenStreetMap): markers per locatie, popup met link naar de details.
 - **Detail-modal** met alle beschikbare velden (contact, links, toegankelijkheid, coördinaten, datums).
 - **Filteren** op categorie en postcode, **zoeken** op naam/adres (gedebounced, 300 ms) en **sorteren** (naam, postcode, publicatiedatum, oplopend/aflopend).
@@ -45,22 +45,22 @@ library met OpenStreetMap-tegels.
 
 | Techniek | Locatie(s) in de code |
 | --- | --- |
-| DOM: selecteren (`querySelector`) | `src/main.js:35`, `src/main.js:76–89` |
-| DOM: manipuleren (`createElement`, `classList`, `textContent`) | `src/js/ui.js:93–101` (alle drie in `buildFavButton`); `src/main.js:108`, `src/main.js:195–197` |
-| DOM: events (`addEventListener`) | `src/main.js:207–209`, `src/main.js:215`; `src/js/ui.js:266` (submit) |
+| DOM: selecteren (`querySelector`) | `src/main.js:46`, `src/main.js:93–108` |
+| DOM: manipuleren (`createElement`, `classList`, `textContent`) | `src/js/ui.js:95–97` (`classList` + `innerHTML` in `setFavButtonState`); `src/js/ui.js:107`, `src/js/ui.js:127–138` (`createElement`/`textContent`); `src/main.js:237` (`classList`) |
+| DOM: events (`addEventListener`) | `src/main.js:249–251`, `src/main.js:272`; `src/js/ui.js:331` (submit) |
 | Constanten (`const`) | `src/js/api.js:18–28` (en doorheen het hele project) |
-| Template literals | `src/js/api.js:23` (URL); `src/main.js:157` |
-| Iteratie (`forEach`, `for...of`) | `forEach`: `src/js/ui.js:122`, `src/js/ui.js:161` — `for...of`: `src/main.js:114` |
-| Array-methodes (`map`, `filter`, `reduce`, `sort`, `find`, `some`) | `map`: `src/js/ui.js:90` · `filter`: `src/js/filters.js:32` · `reduce`: `src/js/filters.js:7` · `sort`: `src/js/filters.js:55` · `find`: `src/main.js:258` · `some`: `src/js/filters.js:38` |
+| Template literals | `src/js/api.js:23` (URL); `src/main.js:200` |
+| Iteratie (`forEach`, `for...of`) | `forEach`: `src/js/ui.js:126`, `src/js/ui.js:165` — `for...of`: `src/main.js:138` |
+| Array-methodes (`map`, `filter`, `reduce`, `sort`, `find`, `some`) | `map`: `src/js/ui.js:91` · `filter`: `src/js/filters.js:32` · `reduce`: `src/js/filters.js:7` · `sort`: `src/js/filters.js:55` · `find`: `src/main.js:315` · `some`: `src/js/filters.js:38` |
 | Arrow functions | `src/js/filters.js:6`, `src/js/filters.js:53` (en overal) |
-| Ternary operator | `src/main.js:239–240`; `src/js/filters.js:56` |
-| Callback functions | `src/js/filters.js:61` (`debounce`), gebruikt in `src/main.js:215`; `src/js/observer.js:38` |
-| Promises (`.then` / `.catch`) | `src/main.js:341`, `src/main.js:361` |
+| Ternary operator | `src/main.js:296`; `src/js/filters.js:56` |
+| Callback functions | `src/js/filters.js:61` (`debounce`), gebruikt in `src/main.js:274`; `src/js/observer.js:38` |
+| Promises (`.then` / `.catch`) | `src/main.js:392`, `src/main.js:412` |
 | Async / await | `src/js/api.js:41`, `src/js/api.js:49`, `src/js/api.js:55` |
 | Observer API (`IntersectionObserver`) | `src/js/observer.js:38` |
 | Fetch | `src/js/api.js:49` |
 | JSON parsing en weergeven | `src/js/api.js:55` (`response.json()`); `src/js/storage.js:20`, `src/js/storage.js:36` |
-| Formuliervalidatie | `src/js/validation.js:7` (`validateNote`); `src/js/ui.js:266` (submit-handler) |
+| Formuliervalidatie | `src/js/validation.js:7` (`validateNote`); `src/js/ui.js:331` (submit-handler) |
 | LocalStorage | `src/js/storage.js:20`, `src/js/storage.js:32`, `src/js/storage.js:39` |
 
 > Lijnnummers verwijzen naar de staat van de code bij het inleveren; kleine
@@ -105,7 +105,8 @@ npm run preview
         ├── favorites.js     # favorieten + notities
         ├── preferences.js   # thema + taal + filter-state
         ├── observer.js      # IntersectionObserver (infinite scroll)
-        └── validation.js    # formuliervalidatie
+        ├── validation.js    # formuliervalidatie
+        └── icons.js         # gedeelde inline-SVG-iconen
 ```
 
 ## Gebruikte bronnen
