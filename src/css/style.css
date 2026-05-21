@@ -1,5 +1,4 @@
-/* Basis reset + styling.
-   De volledige (responsive) styling volgt in een latere stap. */
+/* Basis reset + styling. Responsive aanpassingen staan onderaan dit bestand. */
 *,
 *::before,
 *::after {
@@ -402,4 +401,93 @@ button.control:hover {
 
 .note-counter.over {
   color: #e0245e;
+}
+
+/* ===================================================================
+   Responsive aanpassingen
+   =================================================================== */
+
+/* Tablet en kleiner: iets compactere marges. */
+@media (max-width: 768px) {
+  .app-main {
+    padding: 0.75rem;
+  }
+
+  .app-header {
+    padding: 1rem;
+  }
+
+  .map {
+    height: 60vh;
+  }
+}
+
+/* Telefoon: filterbalk stapelt verticaal en de tabel wordt een kaartenlijst. */
+@media (max-width: 600px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #search {
+    flex: none;
+    width: 100%;
+  }
+
+  /* Tabel omzetten naar gestapelde "kaarten": de kop verdwijnt en elke cel
+     toont zijn eigen label (uit data-label) ervoor. */
+  .places-table {
+    border: none;
+    background: none;
+  }
+
+  .places-table thead {
+    display: none;
+  }
+
+  .places-table,
+  .places-table tbody,
+  .places-table tr,
+  .places-table td {
+    display: block;
+  }
+
+  .places-table tr {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.85rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  .places-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0;
+    border: none;
+    text-align: right;
+  }
+
+  .places-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-align: left;
+    color: var(--color-muted);
+  }
+
+  /* De favoriet-cel: enkel het hartje, rechts bovenaan de kaart, geen label. */
+  .places-table td.fav-cell {
+    width: auto;
+    justify-content: flex-end;
+    padding: 0;
+  }
+
+  .places-table td.fav-cell::before {
+    content: none;
+  }
+
+  .fav-btn {
+    font-size: 1.5rem;
+  }
 }
