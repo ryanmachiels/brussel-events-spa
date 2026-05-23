@@ -24,7 +24,7 @@ library met OpenStreetMap-tegels.
 
 ## Screenshots
 
-> _Voeg hieronder je eigen screenshots toe (bv. in een map `screenshots/`)._
+
 
 | Lijstweergave | Kaartweergave | Detail + notitie |
 | --- | --- | --- |
@@ -121,4 +121,4 @@ npm run preview
 
 Dit project is mee opgebouwd met behulp van **Claude Code (Anthropic)**.
 
-> _Voeg hier een link naar of een export van de volledige AI-chatlog toe._
+
