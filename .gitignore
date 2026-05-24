@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Vite cache
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS / tooling
+.vscode/
+.idea/
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+
+# Lokale env
+*.local
+.env
+.env.*
+
+# Git installer (hoort niet in de repo)
+Git-*.exe
+
+# Opgave-document (hoort niet in de repo)
+*.docx
