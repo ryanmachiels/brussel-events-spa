@@ -24,11 +24,9 @@ library met OpenStreetMap-tegels.
 
 ## Screenshots
 
-
-
 | Lijstweergave | Kaartweergave | Detail + notitie |
 | --- | --- | --- |
-| `![Lijst](screenshots/lijst.png)` | `![Kaart](screenshots/kaart.png)` | `![Detail](screenshots/detail.png)` |
+| ![Lijstweergave](screenshots/lijst.png) | ![Kaartweergave](screenshots/kaart.png) | ![Detail met notitie](screenshots/detail.png) |
 
 ## Gebruikte API
 
