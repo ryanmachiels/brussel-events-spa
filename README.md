@@ -118,6 +118,10 @@ npm run preview
 
 ## AI-chatlog
 
-Dit project is mee opgebouwd met behulp van **Claude Code (Anthropic)**.
-
+Tijdens dit project heb ik AI (**Claude Code, Anthropic**) gebruikt als hulpmiddel
+om ideeën te verkennen, codevoorstellen te bekijken en sneller tot oplossingen te
+komen. Ik heb de gegenereerde output nagekeken, getest en gekozen welke onderdelen
+in het eindresultaat werden gebruikt. Daarnaast heb ik geprobeerd de werking van de
+oplossing te begrijpen en waar nodig aan te passen, zodat ik de gebruikte technieken
+ook zelf kan toelichten.
 
